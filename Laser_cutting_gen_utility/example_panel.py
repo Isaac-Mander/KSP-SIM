@@ -19,7 +19,7 @@ padding = 5
 layers = 3
 
 #Calculate the total image size
-image_width = (width * layers) + (padding * layers * 2)
+image_width = (width * layers) + (layers * 2) + (padding * layers)
 image_height = (height) + (padding * 2)
 img = lt.setup("example_panel.svg",image_width,image_height)
 
@@ -71,6 +71,8 @@ for offset in plate_offsets:
     img.add(lt.create_circle((offset+37.5,padding+10),2.5,"black",0.5))
     img.add(lt.create_circle((offset+37.5,padding+22),3.5,"black",0.5))
     img.add(lt.create_circle((offset+56.25,padding+16),3.5,"black",0.5))
+    
+
 
     #Middle row
     for switch_offset in range(0,5,1):
@@ -94,11 +96,9 @@ img.add(lt.create_text((face_x+18.75,face_y+22+text_offset),"RCS","red",0.5,"3pt
 img.add(lt.create_circle((base_x+18.75,base_y+22+text_offset),1.5,"black",0.5)) #Backlight Base
 img.add(lt.create_circle((middle_x+18.75,middle_y+22+text_offset),1.5,"black",0.5)) #Backlight middle
 
-
 img.add(lt.create_text((face_x+37.5,face_y+22+text_offset),"SAS","red",0.5,"3pt")) #Add text
 img.add(lt.create_circle((base_x+37.5,base_y+22+text_offset),1.5,"black",0.5)) #Backlight Base
 img.add(lt.create_circle((middle_x+37.5,middle_y+22+text_offset),1.5,"black",0.5)) #Backlight middle
-
 
 img.add(lt.create_text((face_x+56.25,face_y+16-text_offset),"RAW","red",0.5,"3pt")) #Add text
 img.add(lt.create_circle((base_x+56.25,base_y+16-text_offset),1.5,"black",0.5)) #Backlight Base
@@ -116,11 +116,15 @@ img.add(lt.create_text((face_x+70,face_y+19),"MODE","red",0.5,"3pt")) #Add text
 img.add(lt.create_circle((base_x+70,base_y+19),1.5,"black",0.5)) #Backlight Base
 img.add(lt.create_circle((middle_x+70,middle_y+19),1.5,"black",0.5)) #Backlight middle
 
+#Border
+img.add(lt.create_rounded_rectangle((offset+18.75-8,padding+2),(70,28+6),3,"red",0.5))
+
+
 
 #Programatically add the middle row labels as it has a repeating pattern
 plate_offsets = [base_x,middle_x]
-upper_labels = ["1","2","3","4","5",]
-lower_labels = ["6","7","8","9","10",]
+upper_labels = ["1","EXND","3","4","5",]
+lower_labels = ["6","RECT","8","9","10",]
 for switch_offset in range(0,5,1):
     label_index = switch_offset
     img.add(lt.create_text((offset+11.3+(15*switch_offset),padding+49.5+text_offset),lower_labels[label_index],"red",0.5,"3pt"))

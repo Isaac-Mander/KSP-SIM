@@ -6,6 +6,7 @@ By Isaac Mander 08/04/25
 import svgwrite
 import math
 
+
 """Sets up a new doc under a common standard"""
 def setup(img_filename, width, height):
     #Create a new file
@@ -50,18 +51,24 @@ def create_arc(center, radius, start_angle, end_angle, outline_color, stroke_wid
     return svgwrite.path.Path(d=path_str, fill="none", stroke=outline_color,
                               stroke_width=stroke_width)
 """Creates a block of text"""
-def create_text(insert, content, outline_color, stroke_width=1, font_size="12pt", font_family="Arial",text_anchor="middle"):
-    return svgwrite.text.Text(
-        content,
-        insert=insert,
-        fill="none",
-        stroke=outline_color,
-        stroke_width=stroke_width,
-        font_size=font_size,
-        font_family=font_family,
-        text_anchor=text_anchor,
-        dominant_baseline="middle"
-    )
+def create_text(insert, content, outline_color, stroke_width=1, font_size="3pt",
+                font_family="Arial", text_anchor="middle", rotation=0):
+    text_attrs = {
+        "insert": insert,
+        "fill": "none",
+        "stroke": outline_color,
+        "stroke_width": stroke_width,
+        "font_size": font_size,
+        "font_family": font_family,
+        "text_anchor": text_anchor,
+        "dominant_baseline": "middle",
+    }
+
+    if rotation != 0:
+        text_attrs["transform"] = f"rotate({rotation},{insert[0]},{insert[1]})"
+
+    return svgwrite.text.Text(content, **text_attrs)
+
 
 def create_rounded_rectangle(insert, size, corner_radius, outline_color,
                              stroke_width=1, inward=False):
@@ -125,35 +132,192 @@ def create_rounded_rectangle(insert, size, corner_radius, outline_color,
         )
         return svgwrite.path.Path(d=d, fill="none", stroke=outline_color, stroke_width=f"{stroke_width}")
 
+from PIL import ImageFont
+def get_text_width(text, font_path="arial.ttf", font_size=12):
+    font = ImageFont.truetype(font_path, font_size)
+    bbox = font.getbbox(text)
+    return bbox[2] - bbox[0]  # width
+
+
+def rotory_labels_middle(centre_pos,hole_radius,label_array,label_angles,label_size,padding,line_length,stroke_width,):
+    item_array = []
+    item_array.append(create_circle(centre_pos,hole_radius,"black",0.5))
+    label_count = len(label_array)
+
+    index = 0
+    for label in label_array:
+        deg_angle = label_angles[index]
+        angle = deg_angle * math.pi/180
+
+        #Calcualte the text direction
+        if angle == (0.5 * math.pi) or angle == (1.5 * math.pi):
+            text_direction = "middle"
+        elif angle > (0.5 * math.pi) and angle < (1.5 * math.pi): #Left
+            text_direction = "end" #Swap start point of text
+        else: #Right
+            text_direction = "start"
+            line_direction = 1
+        
+        #Calculate the starting point of the text obj
+        text_pos = (
+                    centre_pos[0] + padding*math.cos(angle),
+                    centre_pos[1] + padding*math.sin(angle)
+                    )
+        line_pos = (
+                    centre_pos[0] + line_length*math.cos(angle),
+                    centre_pos[1] + line_length*math.sin(angle)
+                    )
+        item_array.append(create_text(text_pos,label,"red",stroke_width,label_size,"Arial",text_direction))
+
+        visual_line = (
+        f"M {centre_pos[0] + hole_radius*math.cos(angle)} {centre_pos[1] + hole_radius*math.sin(angle)}" #Start at the edge of the circle
+        f"L {line_pos[0]} {line_pos[1]}" # Draw a line to the start of the text
+        )
+        item_array.append(svgwrite.path.Path(d=visual_line, fill="none", stroke="red", stroke_width=f"{stroke_width}"))
+        index += 1
+    return item_array
 
 
 
-# Example usage:
+
+def rotory_labels_low(centre_pos,hole_radius,label_array,label_angles,label_size,padding,stroke_width,):
+    item_array = []
+    item_array.append(create_circle(centre_pos,hole_radius,"black",0.5))
+    label_count = len(label_array)
+
+    index = 0
+    for label in label_array:
+        angle = label_angles[index] * math.pi/180
+
+        #Calcualte the text direction
+        if angle > (0.5 * math.pi) and angle < (1.5 * math.pi): #Left
+            text_direction = "end" #Swap start point of text
+            line_offset = (1,2) #Start pos of the under text line
+            line_direction = -1 #Swap the direction of the line underneath the text
+        else: #Right
+            text_direction = "start"
+            line_offset = (-1,2) #Start pos of the under text line
+            line_direction = 1
+        
+        #Calculate the starting point of the text obj
+        text_pos = (
+                    centre_pos[0] + padding*math.cos(angle),
+                    centre_pos[1] + padding*math.sin(angle)
+                    )
+        item_array.append(create_text(text_pos,label,"red",stroke_width,label_size,"Arial",text_direction))
+
+        # If a custom line length isnt specified calculate it
+        line_length = get_text_width(label,"arial-font/arial.ttf",3) * line_direction
+
+        visual_line = (
+        f"M {centre_pos[0] + hole_radius*math.cos(angle)} {centre_pos[1] + hole_radius*math.sin(angle)}" #Start at the edge of the circle
+        f"L {text_pos[0]+line_offset[0]} {text_pos[1]+line_offset[1]}" # Draw a line to the start of the text
+        f"L {text_pos[0]+line_length} {text_pos[1]+line_offset[1]}" # Draw a line accross the bottom of the text
+        )
+        item_array.append(svgwrite.path.Path(d=visual_line, fill="none", stroke="red", stroke_width=f"{stroke_width}"))
+        index += 1
+    return item_array
+
+
+def create_border_with_text(insert, content, border_size, stroke_width=1, font_size="3pt", font_family="Arial"):
+    item_array = []
+    item_array.append(create_text((insert[0],insert[1]-border_size[1]/2),content,"red",stroke_width,font_size,font_family))
+    title_length = get_text_width(content,"arial-font/arial.ttf",3)
+    line = (
+    f"M {insert[0]+title_length} {insert[1] - border_size[1]/2}"
+    f"L {insert[0] + (border_size[0])/2} {insert[1] - border_size[1]/2}"
+    f"L {insert[0] + (border_size[0])/2} {insert[1] + border_size[1]/2}"
+    f"L {insert[0] - (border_size[0])/2} {insert[1] + border_size[1]/2}"
+    f"L {insert[0] - (border_size[0])/2} {insert[1] - border_size[1]/2}"
+    f"L {insert[0]-title_length} {insert[1] - border_size[1]/2}"
+    )
+    item_array.append(svgwrite.path.Path(d=line, fill="none", stroke="red", stroke_width=f"{stroke_width}"))
+    return item_array
+
+def create_border(centre,border_size, stroke_width=0.5):
+    line = (
+    f"M {centre[0]} {centre[1] - border_size[1]/2}"
+    f"L {centre[0] + (border_size[0])/2} {centre[1] - border_size[1]/2}"
+    f"L {centre[0] + (border_size[0])/2} {centre[1] + border_size[1]/2}"
+    f"L {centre[0] - (border_size[0])/2} {centre[1] + border_size[1]/2}"
+    f"L {centre[0] - (border_size[0])/2} {centre[1] - border_size[1]/2}"
+    f"L {centre[0]} {centre[1] - border_size[1]/2}"
+    )
+    return svgwrite.path.Path(d=line, fill="none", stroke="red", stroke_width=f"{stroke_width}")
+
+
+
+
+def add_switch(file,pos,hole_radius,layer_offset_list,text_offset=10,top_text=None,bottom_text=None,left_text=None,right_text=None):
+    #Create the hole in each layer
+    for offset in layer_offset_list:
+        file.add(create_circle(pos,hole_radius,"black",0.5))
+    
+    #Add the text and add backlight on the non face layers
+    if top_text != None:
+        text_pos = (pos[0],pos[1]-text_offset)
+        create_text(text_pos,top_text,"red",0.5,"3pt")
+        
+        create_circle((text_pos[0],text_pos[1]),1.5,"black",0.5)
+
+    if bottom_text != None:
+        text_pos = (pos[0],pos[1]+text_offset)
+        create_text(text_pos,bottom_text,"red",0.5,"3pt")
+    if right_text != None:
+        text_pos = (pos[0]-text_offset,pos[1])
+        create_text(text_pos,right_text,"red",0.5,"3pt")
+    if left_text != None:
+        text_pos = (pos[0]+text_offset,pos[1])
+        create_text(text_pos,left_text,"red",0.5,"3pt")
+
+
+    
+
+def add_backlight_text(file,center,text):
+    pass
+
+
+
+
+# Example usage
 if __name__ == "__main__":
+    #Panel Size (mm)
+    width = 100
+    height = 150
 
-    dwg = setup("test.svg",500,500)
+    #Padding between each panel in the image
+    padding = 5
+
+    #Number of layers in each panel
+    layers = 3
+
+    #Calculate the total image size
+    image_width = (width * layers) + (layers * 2) + (padding * layers)
+    image_height = (height) + (padding * 2)
+    img = setup("test.svg",image_width,image_height)
 
 
-    # Convex (outward) rounded rectangle
-    convex_rect = create_rounded_rectangle(
-        insert=(20, 20),
-        size=(170, 100),
-        corner_radius=5,
-        outline_color="blue",
-        stroke_width=2,
-        inward=False
-    )
-    dwg.add(convex_rect)
 
-    # Concave (inward) rounded rectangle
-    concave_rect = create_rounded_rectangle(
-        insert=(5, 5),
-        size=(170, 100),
-        corner_radius=5,
-        outline_color="red",
-        stroke_width=2,
-        inward=True
-    )
-    dwg.add(concave_rect)
+    #Create the basic frames for each panel
+    base_x = padding
+    base_y = padding
+    img.add(create_rounded_rectangle((base_x,base_y), (width,height), 3, "black", 0.5, False)) #Base panel
 
-    dwg.save()
+    middle_x = base_x + width + padding
+    middle_y = padding
+    img.add(create_rounded_rectangle((middle_x,middle_y), (width,height), 8, "black", 0.5, True)) #Middle panel
+
+    face_x = middle_x + width + padding
+    face_y = padding
+    img.add(create_rounded_rectangle((face_x,face_y), (width,height), 8, "black", 0.5, True)) #Face panel
+
+    layers = [base_x,middle_x,face_x]
+
+
+    add_switch(img,(50,50),4,layers,top_text="TOP")
+
+
+    img.save()
+
+
+
