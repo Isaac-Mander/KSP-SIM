@@ -6,49 +6,6 @@ byte currentActionStatus = 0;
 
 float current_g_force;
 
-class LedButtonPanel {
-  private:
-    int* input_pins;
-    int input_pin_count;
-    int* output_pins;
-    int output_pin_count;
-  public:
-    template <size_t N, size_t M>
-    LedButtonPanel(int (&in_pins)[N], int (&out_pins)[M]) {
-      input_pins = in_pins;
-      input_pin_count = N;
-      output_pins = out_pins;
-      output_pin_count = M;
-    }
-  
-    void init() {
-      //Set the input pins as inputs
-      for (int i = 0; i < input_pin_count; i++) {
-        pinMode(input_pins[i], INPUT_PULLUP);
-      }
-
-      //Set the output pins as outputs
-      for (int i = 0; i < output_pin_count; i++) {
-        int pin = output_pins[i];
-        pinMode(pin, OUTPUT);
-        digitalWrite(pin,LOW);
-      }
-    }
-
-    bool read_button(int index) {
-      //Invert the output as LOW means pressed
-      return !digitalRead(input_pins[index]);
-    }
-
-    void set_LED(int index, bool state) {
-      digitalWrite(output_pins[index],state);
-    }
-};
-
-int input_pins[2] = {A2,A1};
-int output_pins[7] = {3,7,4,8,5,9,2};
-
-LedButtonPanel LBO(input_pins,output_pins);
 
 void connect_to_ksp() {
   // Set up the build in LED, and turn it on.
@@ -63,7 +20,7 @@ void connect_to_ksp() {
     delay(100);
   }
   
-  // Turn off the built-in LED to indicate handshaking is complete.
+  // Turn off the built-in LED to indicate handshaking is co                                            mplete.
   digitalWrite(LED_BUILTIN, LOW);
   
   // Display a message in KSP to indicate handshaking is complete.
@@ -97,19 +54,104 @@ void messageHandler(byte messageType, byte msg[], byte msgSize) {
   }
 }
 
-
-void set_led(int pin, bool state)
-{
-
+void update_action(bool new_state, int custom_group) {
+  if (new_state) {
+    mySimpit.activateAction(custom_group);
+  }
+  if (!new_state) {
+    mySimpit.deactivateAction(custom_group);
+  }
 }
 
 
+
+
+
+
+const int abort_sw = 10, stage_sw = 11;
+const int abort_led = 3, high_g_led = 4, stage_led = 5, low_g_led = 8;
+
+bool is_abort_active = false;
+unsigned long start_of_abort = 0;
+unsigned long previousMillis = 0;
+int ledState = LOW;
+
+bool stage_sw_latch = true;
+
+
+
+const bool DEBUG = false;
 void setup() {
-  connect_to_ksp();
-  
+  Serial.begin(9600);
+
+  pinMode(abort_led,OUTPUT);
+  pinMode(high_g_led,OUTPUT);
+  pinMode(stage_led,OUTPUT);
+  pinMode(low_g_led,OUTPUT);
+
+  pinMode(abort_sw,INPUT_PULLUP);
+  pinMode(stage_sw,INPUT_PULLUP);
+
+  if(!DEBUG) {connect_to_ksp();}
 }
 
 void loop() {
-  mySimpit.update();
-  delay(100);
+  //Abort mode
+  bool abort_sw_state = !digitalRead(abort_sw);
+  if (abort_sw_state == true) {
+    is_abort_active = true;
+  }
+  else
+  {
+    is_abort_active = false;
+  }
+
+  if (is_abort_active) {
+    if (millis() - previousMillis >= 100) {
+      // save the last time you blinked the LED
+      previousMillis = millis();
+
+      // if the LED is off turn it on and vice-versa:
+      if (ledState == LOW) {
+        ledState = HIGH;
+      } else {
+        ledState = LOW;
+      }
+      digitalWrite(abort_led, ledState);
+    }
+  }
+  else {
+    start_of_abort = millis();
+    previousMillis = start_of_abort;
+  }
+
+  if(!DEBUG) {update_action(abort_sw_state,ABORT_ACTION);}
+
+
+  //Stage Switch
+  bool stage_sw_state = digitalRead(stage_sw);
+  if(stage_sw_state && !stage_sw_latch)
+  {
+    update_action(true,STAGE_ACTION);
+    delay(1); //SLIGHT DELAY SO THE ACTION IS REGISTERED IN THE GAME
+    stage_sw_latch = true;
+  }
+  else if(!stage_sw_state && stage_sw_latch)
+  {
+    stage_sw_latch = false;
+  }
+  digitalWrite(stage_led,stage_sw_latch);
+
+
+
+
+  //Low G LED
+  if(current_g_force >= 0.05 && current_g_force < 1) {digitalWrite(low_g_led,HIGH);}
+  else {{digitalWrite(low_g_led,LOW);}}
+  //High G LED
+  if(current_g_force >= 9.0) {digitalWrite(high_g_led,HIGH);}
+  else {{digitalWrite(high_g_led,LOW);}}
+
+  
+  if(!DEBUG) {mySimpit.update();}
 }
