@@ -76,7 +76,9 @@ unsigned long start_of_abort = 0;
 unsigned long previousMillis = 0;
 int ledState = LOW;
 
-bool stage_sw_latch = true;
+bool stage_sw_latch = false;
+
+bool previous_abort_state = is_abort_active;
 
 
 
@@ -95,6 +97,9 @@ void setup() {
   if(!DEBUG) {connect_to_ksp();}
 }
 
+
+
+
 void loop() {
   //Abort mode
   bool abort_sw_state = !digitalRead(abort_sw);
@@ -104,6 +109,7 @@ void loop() {
   else
   {
     is_abort_active = false;
+    digitalWrite(abort_led, LOW);
   }
 
   if (is_abort_active) {
@@ -124,8 +130,14 @@ void loop() {
     start_of_abort = millis();
     previousMillis = start_of_abort;
   }
-
-  if(!DEBUG) {update_action(abort_sw_state,ABORT_ACTION);}
+  
+  if(!DEBUG) {
+    if (previous_abort_state != is_abort_active)
+    {
+      previous_abort_state = is_abort_active;
+      update_action(abort_sw_state,ABORT_ACTION);
+    }
+    }
 
 
   //Stage Switch
