@@ -229,16 +229,16 @@ void update_action_groups(int states[]) {
   update_action(rcs_switch_state, RCS_ACTION);
 
   // Update light
-  bool light_switch_state = states[light_switch - 1];
-  update_action(light_switch_state, LIGHT_ACTION);
+//  bool light_switch_state = states[light_switch - 1];/
+//  update_action(light_switch_state, LIGHT_ACTION);/
 
   // Update BRAKE
-  bool brake_switch_state = states[brake_switch - 1];
-  update_action(brake_switch_state, BRAKES_ACTION);
+//  bool brake_switch_state = states[brake_switch - 1];/
+//  update_action(brake_switch_state, BRAKES_ACTION);/
 
   // Update STAGE
-  bool stage_switch_state = states[stage_switch - 1];
-  update_action(stage_switch_state, STAGE_ACTION);
+//  bool stage_switch_state = states[stage_switch - 1];/
+//  update_action(stage_switch_state, STAGE_ACTION);/
 
   // Update action groups 1 through 8
   bool a1_switch_state = states[a1_switch - 1];
@@ -327,7 +327,7 @@ void test_mode() {
 void setup() {
   // SWITCH MATRIX SETUP
   switch_matrix_setup();
-  aux_led_panel_setup();
+//  aux_led_panel_setup();/
   led_panel_setup();
   connect_to_ksp();
 }
@@ -338,5 +338,5 @@ void loop() {
   switch_scan(switch_states);
   update_action_groups(switch_states);
   update_sas_rcs_leds();
-  update_aux_panel(current_g_force);
+//  update_aux_panel(current_g_force);/
 }
