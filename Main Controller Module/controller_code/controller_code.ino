@@ -68,9 +68,9 @@ const int high_g_led_pin = A14;
 const int general_pin_1 = A8;
 const int general_pin_2 = A9;
 const int general_pin_3 = A10;
-const int general_pin_4 = A13;
+const int general_pin_4 = A11;
 const int general_pin_5 = A12;
-const int general_pin_6 = A11;
+const int general_pin_6 = A13;
 const int general_pin_7 = A14;
 
 
@@ -286,12 +286,6 @@ void led_panel_setup() {
 
 }
 
-void soyuz_panel_setup() {
-  //Set up the matrix grid
-  pinMode(general_pin_1,OUTPUT);
-}
-
-
 //This aux panel is currently not being used
 void aux_led_panel_setup() {
     //Aux leds
@@ -331,31 +325,16 @@ void test_mode() {
 }
 
 void setup() {
-//   // SWITCH MATRIX SETUP
-//   main_switch_matrix_setup();
-// //  aux_led_panel_setup();/
-//   led_panel_setup();
-//   connect_to_ksp();
-pinMode(general_pin_1,OUTPUT);
-pinMode(general_pin_2,OUTPUT);
-pinMode(general_pin_3,OUTPUT);
-pinMode(general_pin_4,OUTPUT);
-pinMode(general_pin_5,OUTPUT);
-pinMode(general_pin_6,OUTPUT);
-pinMode(general_pin_7,OUTPUT);
-digitalWrite(general_pin_1,HIGH);
-digitalWrite(general_pin_2,HIGH);
-digitalWrite(general_pin_3,HIGH);
-digitalWrite(general_pin_4,HIGH);
-digitalWrite(general_pin_5,HIGH);
-digitalWrite(general_pin_6,HIGH);
-digitalWrite(general_pin_7,HIGH);
+  // SWITCH MATRIX SETUP
+  main_switch_matrix_setup();
+  led_panel_setup();
+  connect_to_ksp();
 }
 
 void loop() {
-  // mySimpit.update();
-  // int switch_states[20]; //Reset the switch state array back to empty
-  // switch_scan(switch_states);
-  // update_action_groups(switch_states);
-  // update_sas_rcs_leds();
+  mySimpit.update();
+  int switch_states[20]; //Reset the switch state array back to empty
+  switch_scan(switch_states);
+  update_action_groups(switch_states);
+  update_sas_rcs_leds();
 }
