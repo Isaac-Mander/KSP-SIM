@@ -56,12 +56,23 @@ const int YAW_PIN = A2;     // the pin used for controlling roll
 const int action_group_leds[] = {5,6,7,8,9,10,11,12};   // LED PINS
 const int num_action_group_leds = sizeof(action_group_leds) / sizeof(action_group_leds[0]);
 
-//AUX Led panel
+//AUX Led panel pin definitions
 const int gear_led_pin = A10;
 const int brake_led_pin = A13;
 const int gear_switch_pin = A12;
 const int low_g_led_pin = A11;
 const int high_g_led_pin = A14;
+
+
+//General use connector (OVERLAPS WITH AUX PANEL AS IT IS CURRENTLY NOT IN USE)
+const int general_pin_1 = A8;
+const int general_pin_2 = A9;
+const int general_pin_3 = A10;
+const int general_pin_4 = A13;
+const int general_pin_5 = A12;
+const int general_pin_6 = A11;
+const int general_pin_7 = A14;
+
 
 // Define SAS and RCS LED pins
 const int sas_leds[] = {53}; // Example with multiple LEDs
@@ -134,7 +145,7 @@ int switch_scan(int result[]) {
     }
 }
 
-void switch_matrix_setup() {
+void main_switch_matrix_setup() {
     // Initialize column pins as output
   for (int i = 0; i < numCols; i++) {
     pinMode(colPins[i], OUTPUT);
@@ -228,18 +239,6 @@ void update_action_groups(int states[]) {
   bool rcs_switch_state = states[rcs_switch - 1];
   update_action(rcs_switch_state, RCS_ACTION);
 
-  // Update light
-//  bool light_switch_state = states[light_switch - 1];/
-//  update_action(light_switch_state, LIGHT_ACTION);/
-
-  // Update BRAKE
-//  bool brake_switch_state = states[brake_switch - 1];/
-//  update_action(brake_switch_state, BRAKES_ACTION);/
-
-  // Update STAGE
-//  bool stage_switch_state = states[stage_switch - 1];/
-//  update_action(stage_switch_state, STAGE_ACTION);/
-
   // Update action groups 1 through 8
   bool a1_switch_state = states[a1_switch - 1];
   update_ag(a1_switch_state, 1);
@@ -287,6 +286,13 @@ void led_panel_setup() {
 
 }
 
+void soyuz_panel_setup() {
+  //Set up the matrix grid
+  pinMode(general_pin_1,OUTPUT);
+}
+
+
+//This aux panel is currently not being used
 void aux_led_panel_setup() {
     //Aux leds
     pinMode(gear_led_pin,OUTPUT);
@@ -302,7 +308,7 @@ void aux_led_panel_setup() {
 
     pinMode(gear_switch_pin,INPUT_PULLUP);
 }
-
+//This aux panel is currently not being used
 void update_aux_panel(float current_g_force) {
   // Update GEAR based on switch
   bool gear_switch_state = !digitalRead(gear_switch_pin); //Reversed input so gear is down when switch is tied high
@@ -325,18 +331,31 @@ void test_mode() {
 }
 
 void setup() {
-  // SWITCH MATRIX SETUP
-  switch_matrix_setup();
-//  aux_led_panel_setup();/
-  led_panel_setup();
-  connect_to_ksp();
+//   // SWITCH MATRIX SETUP
+//   main_switch_matrix_setup();
+// //  aux_led_panel_setup();/
+//   led_panel_setup();
+//   connect_to_ksp();
+pinMode(general_pin_1,OUTPUT);
+pinMode(general_pin_2,OUTPUT);
+pinMode(general_pin_3,OUTPUT);
+pinMode(general_pin_4,OUTPUT);
+pinMode(general_pin_5,OUTPUT);
+pinMode(general_pin_6,OUTPUT);
+pinMode(general_pin_7,OUTPUT);
+digitalWrite(general_pin_1,HIGH);
+digitalWrite(general_pin_2,HIGH);
+digitalWrite(general_pin_3,HIGH);
+digitalWrite(general_pin_4,HIGH);
+digitalWrite(general_pin_5,HIGH);
+digitalWrite(general_pin_6,HIGH);
+digitalWrite(general_pin_7,HIGH);
 }
 
 void loop() {
-  mySimpit.update();
-  int switch_states[20];
-  switch_scan(switch_states);
-  update_action_groups(switch_states);
-  update_sas_rcs_leds();
-//  update_aux_panel(current_g_force);/
+  // mySimpit.update();
+  // int switch_states[20]; //Reset the switch state array back to empty
+  // switch_scan(switch_states);
+  // update_action_groups(switch_states);
+  // update_sas_rcs_leds();
 }
